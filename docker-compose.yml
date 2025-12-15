@@ -2,7 +2,7 @@ services:
   mcp:
     build: .
     ports:
-      - "${PUBLISH_PORT:-8001}:8001"
+      - "${PUBLISH_PORT:-10020}:10020"
     environment:
       - SPLUNK_HOST=${SPLUNK_HOST}
       - SPLUNK_PORT=${SPLUNK_PORT:-8089}
@@ -10,14 +10,14 @@ services:
       - SPLUNK_PASSWORD=${SPLUNK_PASSWORD}
       - SPLUNK_TOKEN=${SPLUNK_TOKEN}
       - SPLUNK_SCHEME=${SPLUNK_SCHEME:-https}
-      - FASTMCP_PORT=8001
+      - FASTMCP_PORT=10020
       - FASTMCP_LOG_LEVEL=${FASTMCP_LOG_LEVEL:-INFO}
       - DEBUG=${DEBUG:-false}
       - MODE=sse
     volumes:
       - ./config:/app/config
     healthcheck:
-      test: ["CMD", "curl", "-I", "http://localhost:8001/sse"]
+      test: ["CMD", "curl", "-I", "http://localhost:10020/sse"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -37,8 +37,8 @@ services:
       - SPLUNK_PASSWORD=${SPLUNK_PASSWORD}
       - SPLUNK_TOKEN=${SPLUNK_TOKEN}
       - SPLUNK_SCHEME=${SPLUNK_SCHEME:-https}
-      - FASTMCP_PORT=8001
-      - SSE_BASE_URL=http://mcp:8001
+      - FASTMCP_PORT=10020
+      - SSE_BASE_URL=http://mcp:10020
       - DEBUG=true
     volumes:
       - .:/app

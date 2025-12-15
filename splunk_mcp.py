@@ -44,13 +44,7 @@ app = FastAPI(
 )
 
 # Initialize the MCP server
-mcp = FastMCP(
-    "splunk",
-    description="A FastMCP-based tool for interacting with Splunk Enterprise/Cloud through natural language",
-    version="0.3.0",
-    host="0.0.0.0",  # Listen on all interfaces
-    port=FASTMCP_PORT
-)
+mcp = FastMCP("splunk")
 
 # Create SSE transport instance for handling server-sent events
 sse = SseServerTransport("/messages/")
@@ -292,7 +286,7 @@ SPLUNK_HOST = os.environ.get("SPLUNK_HOST", "localhost")
 SPLUNK_PORT = int(os.environ.get("SPLUNK_PORT", "8089"))
 SPLUNK_SCHEME = os.environ.get("SPLUNK_SCHEME", "https")
 SPLUNK_PASSWORD = os.environ.get("SPLUNK_PASSWORD", "admin")
-VERIFY_SSL = config("VERIFY_SSL", default="true", cast=bool)
+VERIFY_SSL = config("VERIFY_SSL", default="false", cast=bool)
 SPLUNK_TOKEN = os.environ.get("SPLUNK_TOKEN")  # New: support for token-based auth
 
 def get_splunk_connection() -> splunklib.client.Service:

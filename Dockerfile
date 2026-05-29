@@ -1,5 +1,5 @@
-# Use Python 3.10 slim image as base
-FROM python:3.10-slim
+# Use Python 3.12 slim image as base
+FROM python:3.12-slim
 
 # Set working directory
 WORKDIR /app
@@ -28,19 +28,20 @@ RUN mkdir -p /app/config
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
-ENV SPLUNK_HOST=
+ENV SPLUNK_HOST=https://10.4.4.33:8089
 ENV SPLUNK_PORT=8089
-ENV SPLUNK_USERNAME=
-ENV SPLUNK_PASSWORD=
+ENV SPLUNK_USERNAME=admin
+ENV SPLUNK_PASSWORD=password
 ENV SPLUNK_TOKEN=
 ENV SPLUNK_SCHEME=https
 ENV FASTMCP_LOG_LEVEL=INFO
-ENV FASTMCP_PORT=8001
+ENV FASTMCP_PORT=10020
 ENV DEBUG=false
 ENV MODE=sse
+ENV VERIFY_SSL=false
 
 # Expose the FastAPI port
-EXPOSE 8001
+EXPOSE 10020
 
 # Add healthcheck
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \

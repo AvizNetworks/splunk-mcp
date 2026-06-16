@@ -1,15 +1,10 @@
-FROM python:3.10-slim
+ARG PY_BASE=avizdock/ncp-python-base-312:v1.7.0
+FROM ${PY_BASE}
 
 WORKDIR /app
 
-# Install build dependencies, curl for healthcheck, and uv
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    gcc \
-    python3-dev \
-    curl \
-    && rm -rf /var/lib/apt/lists/* \
-    && pip install --no-cache-dir uv
+# Install uv (build deps + curl are provided by the shared base image)
+RUN pip install --no-cache-dir uv
 
 # Copy project files
 COPY pyproject.toml poetry.lock ./

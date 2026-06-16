@@ -1,17 +1,12 @@
+ARG PY_BASE=avizdock/ncp-python-base-312:v1.7.0
 # Use Python 3.12 slim image as base
-FROM python:3.12-slim
+FROM ${PY_BASE}
 
 # Set working directory
 WORKDIR /app
 
 # Install build dependencies, curl for healthcheck, and uv
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    gcc \
-    python3-dev \
-    curl \
-    && rm -rf /var/lib/apt/lists/* \
-    && pip install --no-cache-dir uv
+RUN pip install --no-cache-dir uv
 
 # Copy project files
 COPY pyproject.toml poetry.lock ./

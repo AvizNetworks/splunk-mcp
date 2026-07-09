@@ -1,30 +1,28 @@
-# Use Python 3.12 slim image as base
-FROM python:3.12-slim
+ARG PYTHON_BASE=avizdock/ncp-python-base-312-alpine:v1.7.1
+FROM ${PYTHON_BASE}
 
 # Set working directory
 WORKDIR /app
 
-# Install build dependencies, curl for healthcheck, and uv
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    gcc \
-    python3-dev \
-    curl \
-    && rm -rf /var/lib/apt/lists/* \
+# curl for healthcheck; uv for installing from the lockfile
+RUN apk add --no-cache curl \
     && pip install --no-cache-dir uv
 
 # Copy project files
-COPY pyproject.toml poetry.lock ./
+COPY pyproject.toml uv.lock ./
 COPY splunk_mcp.py ./
 COPY README.md ./
 COPY .env.example ./
 
-# Install dependencies using uv (only main group by default)
-RUN uv pip install --system poetry && \
-    uv pip install --system .
+# Install dependencies from the lockfile (reproducible, non-editable)
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked --no-dev
 
-# Create directory for environment file
-RUN mkdir -p /app/config
+# Create directory for environment file; app writes its own log file to /app,
+# so the whole tree needs to be owned by the non-root runtime user.
+RUN mkdir -p /app/config && chown -R app:app /app
+
+ENV PATH="/app/.venv/bin:$PATH"
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
@@ -47,5 +45,7 @@ EXPOSE 10020
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:${FASTMCP_PORT}/health || exit 1
 
+USER app
+
 # Default to SSE mode
-CMD ["python", "splunk_mcp.py", "sse"] 
+CMD ["python", "splunk_mcp.py", "sse"]

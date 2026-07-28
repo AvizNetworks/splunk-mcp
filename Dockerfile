@@ -1,4 +1,4 @@
-ARG PYTHON_BASE=avizdock/ncp-python-base-312-alpine:v1.7.1
+ARG PYTHON_BASE=avizdock/ncp-python-base-312-alpine:latest
 FROM ${PYTHON_BASE}
 
 # Set working directory

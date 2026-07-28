@@ -64,6 +64,17 @@ def messages_docs():
     """
     pass
 
+@app.get("/health", tags=["Health"], include_in_schema=True)
+async def health_endpoint():
+    """Lightweight liveness probe for container health checks (NCP-3383).
+
+    Returns HTTP 200 whenever the MCP HTTP server is up. This intentionally does
+    NOT contact Splunk: the container's Docker HEALTHCHECK (and ncp-api's health
+    probe) hit this path, and a Splunk outage should not mark the MCP container
+    itself unhealthy. Splunk reachability is exposed via the `health` MCP tool.
+    """
+    return {"status": "ok"}
+
 @app.get("/sse", tags=["MCP"])
 async def handle_sse(request: Request):
     """

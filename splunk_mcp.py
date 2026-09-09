@@ -2,6 +2,7 @@
 import json
 import logging
 import os
+import re
 import ssl
 import traceback
 from datetime import datetime
@@ -335,6 +336,24 @@ def get_splunk_connection() -> splunklib.client.Service:
         logger.error(f"❌ Failed to connect to Splunk: {str(e)}")
         raise
 
+# NCP-3182: SPL commands that write, delete, or execute arbitrary code/scripts
+# rather than just reading data — denylist (not allowlist) since SPL's
+# legitimate read-only surface (stats/eval/table/where/join/lookup/...) is far
+# too large to enumerate safely.
+_DENIED_SPL_COMMANDS = {
+    "run", "script", "sendemail", "outputlookup", "collect", "summaryindex",
+    "outputcsv", "dump", "delete",
+}
+_SPL_PIPE_CMD_RE = re.compile(r"\|\s*([a-zA-Z][a-zA-Z0-9_]*)", re.IGNORECASE)
+
+
+def _validate_spl(query: str) -> None:
+    for match in _SPL_PIPE_CMD_RE.finditer(query):
+        cmd = match.group(1).lower()
+        if cmd in _DENIED_SPL_COMMANDS:
+            raise ValueError(f"Rejected: SPL command '{cmd}' is not permitted")
+
+
 @mcp.tool()
 async def search_splunk(search_query: str, earliest_time: str = "-24h", latest_time: str = "now", max_results: int = 100) -> List[Dict[str, Any]]:
     """
@@ -356,7 +375,9 @@ async def search_splunk(search_query: str, earliest_time: str = "-24h", latest_t
     stripped_query = search_query.lstrip()
     if not (stripped_query.startswith('|') or stripped_query.lower().startswith('search')):
         search_query = f"search {search_query}"
-    
+
+    _validate_spl(search_query)
+
     try:
         service = get_splunk_connection()
         logger.info(f"🔍 Executing search: {search_query}")

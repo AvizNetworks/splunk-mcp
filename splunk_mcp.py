@@ -336,7 +336,7 @@ def get_splunk_connection() -> splunklib.client.Service:
         logger.error(f"❌ Failed to connect to Splunk: {str(e)}")
         raise
 
-# NCP-3182: SPL commands that write, delete, or execute arbitrary code/scripts
+# SPL commands that write, delete, or execute arbitrary code/scripts
 # rather than just reading data — denylist (not allowlist) since SPL's
 # legitimate read-only surface (stats/eval/table/where/join/lookup/...) is far
 # too large to enumerate safely.

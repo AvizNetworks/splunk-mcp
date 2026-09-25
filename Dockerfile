@@ -1,12 +1,16 @@
 ARG PYTHON_BASE=avizdock/ncp-python-base-312-alpine:latest
-FROM ${PYTHON_BASE}
+# Runtime stage: plain upstream python:3.12-alpine -- the same Alpine release and
+# CPython the shared base is built FROM, but without its build toolchain, so the
+# image does not carry ~450 MB of gcc/binutils/git layers underneath. Override
+# with a lean shared runtime base once deploy-ones provides one.
+ARG PYTHON_RUNTIME_BASE=python:3.12-alpine
 
-# Set working directory
+# --- builder: resolve the locked venv (uv only lives here) ---
+FROM ${PYTHON_BASE} AS builder
+
 WORKDIR /app
 
-# curl for healthcheck; uv for installing from the lockfile
-RUN apk add --no-cache curl \
-    && pip install --no-cache-dir uv
+RUN pip install --no-cache-dir uv
 
 # Copy project files
 COPY pyproject.toml uv.lock ./
@@ -17,6 +21,24 @@ COPY .env.example ./
 # Install dependencies from the lockfile (reproducible, non-editable)
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-dev
+
+# --- runtime: lean upstream alpine (PYTHON_RUNTIME_BASE), no toolchain or pip ---
+FROM ${PYTHON_RUNTIME_BASE}
+
+WORKDIR /app
+
+# Build toolchain, packaging tools: if PYTHON_RUNTIME_BASE is the shared alpine base it
+# carries build-base/git/curl/*-dev, and every base carries pip/setuptools/wheel
+# for building; none are needed at runtime (the app runs from /app/.venv and the
+# healthcheck uses python), and they are the bulk of the image's HIGH findings
+# (binutils, pip's vendored msgpack/setuptools).
+RUN pkgs="$(apk info -e build-base libffi-dev openssl-dev git curl || true)" \
+    && if [ -n "$pkgs" ]; then apk del --no-cache $pkgs; fi \
+    && apk upgrade --no-cache \
+    && (python -m pip uninstall -y setuptools wheel pip || true) \
+    && (id app >/dev/null 2>&1 || (addgroup -g 10001 app && adduser -D -u 10001 -G app app))
+
+COPY --from=builder /app /app
 
 # Create directory for environment file; app writes its own log file to /app,
 # so the whole tree needs to be owned by the non-root runtime user.
@@ -43,7 +65,7 @@ EXPOSE 10020
 
 # Add healthcheck
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:${FASTMCP_PORT}/health || exit 1
+    CMD python -c "import os,urllib.request; urllib.request.urlopen('http://localhost:%s/health' % os.environ.get('FASTMCP_PORT','10020'), timeout=5)" || exit 1
 
 USER app
 

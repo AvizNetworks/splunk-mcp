@@ -9,7 +9,7 @@ dependencies = [
     "splunk-sdk>=1.7.4",
     "python-decouple>=3.8",
     "requests>=2.31.0",
-    "aiohttp>=3.13.3,<4.0.0",
+    "aiohttp>=3.14.3,<4.0.0",
     "uvicorn>=0.23.1",
     "fastapi>=0.104.0",
     "starlette>=0.49.1",
@@ -23,7 +23,7 @@ dependencies = [
     "mcp>=1.23.0",
     "authlib>=1.6.7",
     "urllib3>=2.6.3",
-    "cryptography>=46.0.5",
+    "cryptography>=50.0.0",
     "python-multipart>=0.0.22",
 ]
 
@@ -81,3 +81,9 @@ python_version = "3.10"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
+
+[tool.uv]
+# Security floors for transitive dependencies (HIGH/CRITICAL CVEs in older releases).
+constraint-dependencies = [
+    "anyio>=4.14.2",
+]
